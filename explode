@@ -1,0 +1,9 @@
+#!/bin/sh
+#	purpose: convert word to list 
+#			"abcde" -> "a b c d e"
+#		arg: a single word
+# 	output: an 'exploded' versioin
+explode(){
+	echo "$1" | sed 's/./& /g'
+}
+echo $(explode $1) 

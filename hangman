@@ -1,0 +1,184 @@
+#!/bin/sh
+#  hangman: This is a word guessing game
+#  Method: get user input, check if the letter is guessed already first,
+# 			if it is, show guessed message and do nothing
+#			if not, see if guessed right
+#					if guessed right : 
+#								remove frome the list of letters need to beguessed
+#								update the progress 
+#								if the list empty, show win message
+#					if guessed wrong;
+#								change picture
+#								reduce the number of chance
+#								if the chance are 0, show lose message
+
+# clear the screen before the game begin
+clear
+# Has 7 chances to be wrong
+CHANCE="7"
+# list of guesses
+GUESSES=""		
+# generate a random word
+WORD=$(./random_word)
+# expand the word with sapce, remove the letter if guessed right
+WORDLIST=$(./explode $WORD)  
+# the List with correnct word, does not change
+EXPLODELIST=$(./explode $WORD) 
+# a list of guessed right letters
+GUESSEDRIGHT=""
+
+
+# changes when gussed a right letter, shows the rest with dashes
+showword(){
+	SHOWWORD=""
+	DASH="_"
+	for N in $EXPLODELIST
+	do 	
+		for P in $GUESSEDRIGHT
+		do
+			if [  $N = $P ]
+			then
+				SHOWWORD="$SHOWWORD $P"
+				continue 2
+			fi
+		done
+		SHOWWORD="$SHOWWORD $DASH"  #no match means havn't guessed right so add dash
+	done
+	echo $SHOWWORD
+}
+
+# generate a same length string with _ for initial showing
+dash(){
+	DASHWORD=""
+	DASH="_"
+	for N in $EXPLODELIST
+	do 	
+		DASHWORD="$DASHWORD $DASH"  #no match means havn't guessed right so add dash
+	done
+	echo $DASHWORD
+}
+
+# read on char from input
+read_one_char()
+{
+	 stty -icanon min 1
+	 dd ibs=1 count=1 status=noxfer 2>/dev/null
+	 stty icanon
+}
+
+
+# remove function to remove an element in the wordlist,
+# it remove the $1 if exsit in the list 
+remove(){
+	NEWLIST=""
+	for M in $WORDLIST
+	do
+		if test ! $1 = $M
+		then
+			NEWLIST="$NEWLIST $M"
+	    fi
+	done
+	echo $NEWLIST
+}
+# change a upper case input to lower case
+lcase(){
+	echo $G | tr '[A-Z]' '[a-z]'
+}
+
+#filled with initial dashes
+SHOWWORD=$(dash)
+echo ""
+# the main loop
+while true
+do  	
+	# check how many changes left, and show the picture
+	# if no chance leftt, tell the user he lost
+	case $CHANCE in
+		0)	cat hm.7 
+		echo "Sorry! You Lost :("
+		echo "Answer is $WORD, Ha!"
+		echo "Enter any thing to play again"
+		echo "Enter \"exit\" to finish"
+		#get argument for if he want to play again
+		read GOON
+		if [ $GOON = "exit" ] 
+		then
+			exit 0
+		else
+			./hangman
+		fi
+		;;
+		# show the pic based on how many chance left
+		7) cat hm.0 ;;
+		6) cat hm.1 ;;
+		5) cat hm.2 ;;
+		4) cat hm.3 ;;
+		3) cat hm.4 ;;
+		2) cat hm.5 ;;
+		1) cat hm.6 ;;
+	esac
+
+	echo "Guesses: $GUESSES"
+	echo "Word: $SHOWWORD"
+	echo "GUESS?  "
+
+	G=$(read_one_char)
+
+	clear
+# check if input is a letter, if it is uppercase convert to lowercase
+	case "$G" in  								
+    	[a-z])   ;;
+    	[A-Z])  G=$(lcase $G) ;;
+    	*) echo "Invalid input, need a letter"
+		   continue ;;
+	esac
+# check if input already guessed
+	for L in $GUESSES
+	do
+		if test $G = $L    2>/dev/null
+		then
+			echo "You already guessed $G"
+		# to the loop that read another word
+			continue 2   	   					
+		fi
+	done
+# not guessed before add to the GUESSES
+	echo ""
+	# if not in GUESSES add the letter
+	GUESSES="$GUESSES $G"							
+	for M in $WORDLIST  
+	do
+		# if in the wordlist
+		if test $G = $M 	2>/dev/null					
+		then 									
+			GUESSEDRIGHT="$GUESSEDRIGHT $G"
+		
+			SHOWWORD=$(showword $GUESSEDRIGHT)
+						
+			WORDLIST=$(remove $G)
+			# if wordlist is  not emtpy means the user guessed every letter
+			# continue for input
+			if [ ! -z "$WORDLIST" -a "$WORDLIST"!=" " ]; then
+			continue 2 
+			else
+				echo "Congratulations! You Win :)"
+				echo "Enter any button to try again"
+				echo "Enter \"exit\" to finish"
+				# ask user if want to play again
+				read GOON
+				if [ $GOON = "exit" ] 
+				then
+					exit 0
+				else
+					./hangman
+				fi
+		
+			fi
+		fi
+	done
+	# reduce the chance when its wrong
+	CHANCE=$(expr $CHANCE - 1)
+done
+
+	
+

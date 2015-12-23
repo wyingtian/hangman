@@ -1,0 +1,14 @@
+#!/bin/sh
+read_one_char()
+{
+         stty -icanon min 1
+         dd ibs=1 count=1 status=noxfer 2>/dev/null
+         stty icanon
+}
+
+while true
+do
+   printf "char? "
+   X=`read_one_char`
+        printf "\n    you typed $X\n"
+done
